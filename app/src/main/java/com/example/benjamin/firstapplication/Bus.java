@@ -9,7 +9,7 @@ import java.util.Calendar;
 public class Bus {
 
     public float longitude, latitude, latitudeOfLastPolling, longitudeOfLastPolling;
-    public String id, destinationName, origin;
+    public String id, destinationName, origin, busID;
     public String expectedArrivalTime, expectedDepartureTime;
     public int direction;
     public Stop busRoute[];
@@ -57,8 +57,8 @@ public class Bus {
 //                route_shape[];
 //                longitude, latitude,
 //                longitudeOfLastPolling, latitudeOfLastPolling
-                ArrayList<LatLng> combinedPositions = combineRouteWithShape(busRoute, route_shape);
-
+                ArrayList<MyPoint> combinedPositions = combineRouteWithShape(busRoute, route_shape);
+//                combinedPositions
 
 				//Converting latitude-longitude pairs to easting-northing pairs and find distances between stops
 				//contained in busRoute.
@@ -121,38 +121,40 @@ public class Bus {
 		return estimatedArrivalTime;
 	}
 
-    public ArrayList<LatLng> combineRouteWithShape (Stop[] stops, Shape routeShape) {
-        ArrayList<LatLng> out = null;
+    public ArrayList<MyPoint> combineRouteWithShape (Stop[] stops, Shape routeShape) {
+        ArrayList<MyPoint> out = null;
+//        ArrayList<LatLng> out = null;
         double[] tmpdist = null;
 
-        for (int i = 0; i <= route_shape.points.size(); i++) {
-            out.add(new LatLng(route_shape.points.get(i).shape_pt_lat,route_shape.points.get(i).shape_pt_lon));
+        for (int i = 0; i <= routeShape.points.size(); i++) {
+            out.add(routeShape.points.get(i));
+//            out.add(new MyPoint(routeShape.points.get(i).shape_pt_lat,routeShape.points.get(i).shape_pt_lon));
         }
 
         for (Stop s : stops) {
-            for (int i = 0; i < route_shape.points.size(); i++) {
-                MyPoint tmppoint = route_shape.points.get(i);
+            for (int i = 0; i < routeShape.points.size(); i++) {
+                MyPoint tmppoint = routeShape.points.get(i);
                 tmpdist[i] = Math.sqrt(Math.pow(s.stop_lat - tmppoint.shape_pt_lat,2) + Math.pow(s.stop_lon - tmppoint.shape_pt_lon,2));
             }
             int index = minIndex(tmpdist);
 
-            if (index == route_shape.points.size()) {
+            if (index == routeShape.points.size()) {
                 if (tmpdist[index-1] >= tmpdist[0]) {
-                    out.add(0,new LatLng(s.stop_lat,s.stop_lon));
+                    out.add(0,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
                 }  else {
-                    out.add(new LatLng(s.stop_lat,s.stop_lon));
+                    out.add(new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
                 }
             } else if (index == 0) {
-                if (tmpdist[index+1] >= tmpdist[route_shape.points.size()]) {
-                    out.add(0,new LatLng(s.stop_lat,s.stop_lon));
+                if (tmpdist[index+1] >= tmpdist[routeShape.points.size()]) {
+                    out.add(0,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
                 } else {
-                    out.add(new LatLng(s.stop_lat,s.stop_lon));
+                    out.add(new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
                 }
-                out.add(index-1,new LatLng(s.stop_lat,s.stop_lon));
+                out.add(index-1,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
             } else if (tmpdist[index-1] > tmpdist[index+1]) {
-                out.add(index,new LatLng(s.stop_lat,s.stop_lon));
+                out.add(index,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
             } else if (tmpdist[index+1] > tmpdist[index-1]) {
-                out.add(index-1,new LatLng(s.stop_lat,s.stop_lon));
+                out.add(index-1,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
             }
         }
         return out;

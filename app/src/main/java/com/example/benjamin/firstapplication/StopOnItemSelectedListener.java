@@ -16,35 +16,43 @@ public class StopOnItemSelectedListener implements OnItemSelectedListener {
 
     MapsActivity currentMapActivity;
 //    RouteOnItemSelectedListener currentRouteListener;
-    HashMap<String, Trip> currentTripHashMap;
+//    HashMap<String, Trip> currentTripHashMap;
     public Stop currentBusRoute[];
     public String routeName;
     GoogleMap googlemap;
+    MyTimerTask timerTask;
 
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
         String stopID = parent.getItemAtPosition(pos).toString();
+        Bus tmp1 = null;
+        Bus tmp0 = null;
+        HashMap<String, Bus> busses = Utility.getBusses();
 
-        HashMap<String, Bus> busses = getBusHashMap();
-
+//        timerTask.setRouteName(routeName);
+        currentMapActivity.clearBusLocations();
         for (Bus b : busses.values()) {
             if (b.id.equals(routeName)) {
-                currentMapActivity.plotBusLocation(b, googlemap, stopID);
+//                currentMapActivity.plotBusLocation(b, googlemap, stopID);
+                if (b.direction == 1) {
+                    tmp1 = b;
+                } else if (b.direction == 0) {
+                    tmp0 = b;
+                }
+                currentMapActivity.plotBusLocation(b);
             }
         }
-
-
+        if (tmp0 != null && tmp1 != null) {
+            currentMapActivity.plotRoutePath(tmp0, tmp1);
+        } else if (tmp0 == null) {
+            currentMapActivity.plotRoutePath(tmp1);
+        } else if (tmp1 == null) {
+            currentMapActivity.plotRoutePath(tmp0);
+        }
     }
 
-    public void onNothingSelected(AdapterView<?> arg0) {
-    }
+    public void onNothingSelected(AdapterView<?> arg0) { }
 
-    public void setMapsClass (MapsActivity map) {
-        currentMapActivity = map;
-    }
-
-    public void setHashMap (HashMap<String, Trip> hm) {
-        currentTripHashMap = hm;
-    }
+    public void setMapsClass (MapsActivity map) { currentMapActivity = map; }
 
     public void setCurrentRoute (Stop route[]) {
         currentBusRoute = route;
@@ -58,9 +66,11 @@ public class StopOnItemSelectedListener implements OnItemSelectedListener {
         routeName = route;
     }
 
-    public HashMap<String, Bus> getBusHashMap () {
-        return null;
-    }
+    public void setTimer (MyTimerTask t) { timerTask = t; }
 
+    public HashMap<String, Bus> getBusHashMap () {
+        HashMap<String, Bus> a = Utility.getBusses();
+        return a;
+    }
 }
 

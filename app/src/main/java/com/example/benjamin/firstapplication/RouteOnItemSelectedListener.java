@@ -1,9 +1,13 @@
 package com.example.benjamin.firstapplication;
 
+import android.content.res.Resources;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,12 +27,13 @@ public class RouteOnItemSelectedListener implements OnItemSelectedListener {
     HashMap<String, Bus> currentHashMap;
     Spinner spinner2ref;
     StopOnItemSelectedListener currentStopListener;
+    public Resources resources;
 
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
         String routeID = parent.getItemAtPosition(pos).toString();
 //        Toast.makeText(parent.getContext(),routeID,Toast.LENGTH_SHORT).show();
 
-        HashMap<String, Bus> busses = getBusHashMap();
+        HashMap<String, Bus> busses = Utility.getBusses();
         List<String> toSpin = new ArrayList<String>();
         Bus tmp = null;
         for (Bus b : busses.values()) {
@@ -44,6 +49,7 @@ public class RouteOnItemSelectedListener implements OnItemSelectedListener {
             }
         }
         currentStopListener.setRouteName(routeID);
+        currentMapActivity.setRouteName(routeID);
         currentStopListener.setCurrentRoute(tmp.busRoute);
         ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(currentMapActivity,android.R.layout.simple_spinner_item,toSpin);
         spinner2ref.setAdapter(adapter2);
@@ -63,7 +69,8 @@ public class RouteOnItemSelectedListener implements OnItemSelectedListener {
     public void refine () {}
 
     public HashMap<String, Bus> getBusHashMap () {
-        return null;
+        HashMap<String, Bus> a = Utility.getBusses();
+        return a;
     }
 
     public void setStopListener (StopOnItemSelectedListener stopListener) {

@@ -10,11 +10,14 @@ package com.example.benjamin.firstapplication;
 //import org.json.JSONArray;
 //import org.json.JSONObject;
 
+import android.content.res.Resources;
 import android.icu.text.RelativeDateTimeFormatter;
 import android.icu.text.SimpleDateFormat;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import javax.net.ssl.HttpsURLConnection;
 import java.net.MalformedURLException;
@@ -38,9 +41,37 @@ public final class Utility {
     private static Timer apiPoller;
     private static TimerTask apiPollerTask;
     public static int updateModelExecuteCount;
+    public static HashMap<String, Bus> busses;
+    public static Resources resources;
 
     private Utility() {
     }
+
+    public static HashMap<String, Bus> getBusses() {
+        return busses;
+    }
+
+    public static void setBusses (HashMap<String, Bus> a) {
+        busses = a;
+    }
+
+    public static void getBusHashMap () throws ParseException, org.json.simple.parser.ParseException, IOException {
+        URL url = new URL("http://129.3.210.239:8080/MTABusServlet/MTABusServlet");
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.setRequestMethod("POST");
+        urlConnection.setDoOutput(true);
+        urlConnection.setRequestProperty("RT", "getBusses");
+        String fileName = Utility.getFile(urlConnection, "C:\\Users\\Benjamin\\AndroidStudioProjects\\FirstApplication\\app\\src\\main\\res\\raw\\", "busses.txt", false);
+    }
+//        resources = this.getResources();
+//
+//        InputStream bussesStream;
+//        int bussesID = resources.getIdentifier("busses","raw",getPackageName());
+//        bussesStream = resources.openRawResource(bussesID);
+//        Utility.decodeToHashMap(bussesStream);
+//        HashMap<String, Bus> out = Utility.getBusses();
+//        return out;
+//    }
     
     //parse shapes file into HashMap<shape_id, Shape>
 //    public static HashMap parseShapes (String fn) throws FileNotFoundException {
@@ -101,6 +132,38 @@ public final class Utility {
 
         return busses;
     }
+
+
+//    public static HashMap<String, Bus> getBusHashMap() {
+//        URL url = null;
+//        HttpURLConnection urlConnection = null;
+//        try {
+//            url = new URL("129.3.210.239/MTABusServlet/");
+//            urlConnection = (HttpURLConnection) url.openConnection();
+//            urlConnection.setRequestMethod("POST");
+//        } catch (MalformedURLException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        urlConnection.setDoOutput(true);
+//        urlConnection.setRequestProperty("RT", "getBusses");
+//        try {
+//            String fileName = Utility.getFile(urlConnection, "C:\\Users\\Benjamin\\AndroidStudioProjects\\FirstApplication\\app\\src\\main\\res\\raw\\", "busses.txt", false);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        resources = this.getResources();
+//        InputStream bussesStream;
+//        int bussesID = resources.getIdentifier("busses", "raw", getPackageName());
+//        bussesStream = resources.openRawResource(bussesID);
+//        Utility.decodeToHashMap(bussesStream);
+//        HashMap<String, Bus> out = Utility.getBusses();
+//        return out;
+//    }
+
+
 
     // parses trips in txt file and returns hashmap of <trip_id, Trip>
 //    public static HashMap parseTrips(String fn) throws FileNotFoundException {
@@ -248,6 +311,72 @@ public final class Utility {
         return reader.readObject();
     }
 
+
+    //decodes input to hashmap
+    public static void decodeToHashMap(InputStream is) {
+        HashMap<String, Bus> bussesLocal = new HashMap();
+        Bus b = null;
+        ArrayList<Stop> route = null;
+        Stop s = null;
+        Scanner iss;
+        String buffer;
+        String buffer_s[];
+        iss = new Scanner(is);
+
+        //decode
+        while (iss.hasNextLine()) {
+            buffer = iss.nextLine();
+            if (buffer.equals("NEWBUS")) {
+                buffer = iss.nextLine();
+                buffer_s = buffer.split(",");
+                b = new Bus(Float.parseFloat(buffer_s[0]),
+                        Float.parseFloat(buffer_s[1]), buffer_s[2], buffer_s[3],
+                        buffer_s[4], buffer_s[5], Integer.parseInt(buffer_s[6]));
+                b.busID = buffer_s[7];
+            } else if (buffer.equals("NEWROUTE")) {
+                route = new ArrayList();
+                while (iss.hasNext()) {
+                    buffer = iss.nextLine();
+                    if (buffer.equals("ENDROUTE")) {
+                        b.busRoute = new Stop[route.size()];
+                        route.toArray(b.busRoute);
+                        break;
+                    } else {
+                        buffer_s = buffer.split(",");
+                        route.add(new Stop(buffer_s[0], buffer_s[1],
+                                Double.parseDouble(buffer_s[2]),
+                                Double.parseDouble(buffer_s[3]),
+                                Integer.parseInt(buffer_s[4])));
+                    }
+                }
+            } else if (buffer.equals("NEWSHAPE")) {
+                buffer = iss.nextLine();
+                b.route_shape = new Shape(buffer);
+            } else if (buffer.equals("NEWPOINTS")) {
+                while (iss.hasNextLine()) {
+                    buffer = iss.nextLine();
+                    if (buffer.equals("ENDPOINTS")) {
+                        break;
+                    } else {
+                        buffer_s = buffer.split(",");
+                        b.route_shape.points.add(new MyPoint(buffer_s[0],
+                                Double.parseDouble(buffer_s[1]),
+                                Double.parseDouble(buffer_s[2]),
+                                Integer.parseInt(buffer_s[3])));
+                    }
+                }
+            } else if (buffer.equals("ENDBUS")) {
+                bussesLocal.put(b.busID, b);
+            }
+        }
+
+        busses = bussesLocal;
+        return;
+    }
+
+
+
+    //Jason parser for MTA data feed output
     public static HashMap jsonParser(String fn) throws IOException, ParseException, org.json.simple.parser.ParseException {
         //String fn = Utility.getFile("http://bustime.mta.info/api/siri/vehicle-monitoring.json?key=7a22c3e8-61a7-40ff-9d54-714e36f56880", "C:/Users/dt817/OneDrive/Documents" , "jsonFile.json");
         HashMap<String, Bus> busses = new HashMap();
