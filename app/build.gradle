@@ -39,4 +39,10 @@ dependencies {
     // https://mvnrepository.com/artifact/org.glassfish/javax.json
     compile group: 'org.glassfish', name: 'javax.json', version: '1.0.4'
 
+    compile group: 'commons-validator', name: 'commons-validator', version: '1.6'
+    configurations {
+        all*.exclude group: 'commons-logging', module: 'commons-logging'
+    }
+    compile 'com.android.volley:volley:1.0.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
 }
