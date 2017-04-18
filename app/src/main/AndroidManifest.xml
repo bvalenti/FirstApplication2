@@ -34,27 +34,11 @@
             android:label="MTA">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Register"
-                  android:label="MTA">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".MapsActivity"
-            android:label="MTA">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <activity android:name=".Register" android:label="MTA"></activity>               <category android:name="android.intent.category.LAUNCHER" />
+        <activity android:name=".MapsActivity" android:label="MTA"></activity>
     </application>
 
 </manifest>
