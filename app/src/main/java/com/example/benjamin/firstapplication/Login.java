@@ -14,6 +14,12 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import android.os.Process;
+
 public class Login extends AppCompatActivity {
 
     @Override
@@ -49,7 +55,34 @@ public class Login extends AppCompatActivity {
                         boolean success = jsonResponse.getBoolean("success");
 
                         if(success){
-                            String username = jsonResponse.getString("username");
+                            final String username = jsonResponse.getString("username");
+                            final Thread retrieveFile = new Thread(new Runnable () {
+
+                                @Override
+                                public void run() {
+                                    android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                                    try {
+                                        //Test code
+//                    URL url = new URL("http://www.textfiles.com/100/914bbs.txt");
+//                    InputStream inputStream = url.openStream();
+//                    inputStream.close();
+
+                                        //Code for retrieving files from server
+                                        URL url = new URL("http://129.3.212.153:8080/MTABusServlet/MTABusServlet?RequestType=login&userID=" + username);
+                                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                                        urlConnection.setRequestMethod("POST");
+
+                                        Utility.getFile(urlConnection, "", "ignore.txt", false);
+                                        urlConnection.disconnect();
+
+                                    } catch (MalformedURLException e) {
+                                        e.printStackTrace();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
+                            retrieveFile.start();
 
                             Intent intent = new Intent(Login.this, MapsActivity.class);
                             /*Intent admin = new Intent(Login.this, MapsActivity2.class);
