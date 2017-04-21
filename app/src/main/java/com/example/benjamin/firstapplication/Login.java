@@ -68,12 +68,11 @@ public class Login extends AppCompatActivity {
 //                    inputStream.close();
 
                                         //Code for retrieving files from server
-                                        URL url = new URL("http://129.3.212.153:8080/MTABusServlet/MTABusServlet?RequestType=login&userID=" + username);
+                                        URL url = new URL("http://129.3.212.153:8080/MTABusServlet/MTABusServlet?RequestType=login&UserID=" + username);
                                         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                                         urlConnection.setRequestMethod("POST");
 
-                                        Utility.getFile(urlConnection, "", "ignore.txt", false);
-                                        urlConnection.disconnect();
+                                        Utility.getFile(urlConnection, "", "", false);
 
                                     } catch (MalformedURLException e) {
                                         e.printStackTrace();
