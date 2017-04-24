@@ -10,11 +10,13 @@ package com.example.benjamin.firstapplication;
 //import org.json.JSONArray;
 //import org.json.JSONObject;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.icu.text.RelativeDateTimeFormatter;
 import android.icu.text.SimpleDateFormat;
 
 import java.io.*;
+import java.io.FileOutputStream;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.util.ArrayList;
@@ -36,6 +38,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import static android.app.PendingIntent.getActivity;
+
 public final class Utility {
 
     private static Timer apiPoller;
@@ -44,34 +48,29 @@ public final class Utility {
     public static HashMap<String, Bus> busses;
     public static Resources resources;
 
+
     private Utility() {
     }
 
-    public static HashMap<String, Bus> getBusses() {
+    public static synchronized HashMap getBusses(){
         return busses;
     }
+
 
     public static void setBusses (HashMap<String, Bus> a) {
         busses = a;
     }
 
-    public static void getBusHashMap () throws ParseException, org.json.simple.parser.ParseException, IOException {
-        URL url = new URL("http://129.3.210.239:8080/MTABusServlet/MTABusServlet");
-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-        urlConnection.setRequestMethod("POST");
-        urlConnection.setDoOutput(true);
-        urlConnection.setRequestProperty("RT", "getBusses");
-        String fileName = Utility.getFile(urlConnection, "C:\\Users\\Benjamin\\AndroidStudioProjects\\FirstApplication\\app\\src\\main\\res\\raw\\", "busses.txt", false);
-    }
-//        resources = this.getResources();
-//
-//        InputStream bussesStream;
-//        int bussesID = resources.getIdentifier("busses","raw",getPackageName());
-//        bussesStream = resources.openRawResource(bussesID);
-//        Utility.decodeToHashMap(bussesStream);
-//        HashMap<String, Bus> out = Utility.getBusses();
-//        return out;
+//    public static void getBusHashMap (String fos, Context ctx) throws ParseException, org.json.simple.parser.ParseException, IOException {
+//        URL url = new URL("http://129.3.210.239:8080/MTABusServlet/MTABusServlet");
+//        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+//        urlConnection.setRequestMethod("POST");
+//        urlConnection.setDoOutput(true);
+//        urlConnection.setRequestProperty("RT", "getBusses");
+//        String fileName = Utility.getFile(urlConnection, fos, "busses.txt", false, ctx);
 //    }
+
+
     
     //parse shapes file into HashMap<shape_id, Shape>
 //    public static HashMap parseShapes (String fn) throws FileNotFoundException {
@@ -261,9 +260,9 @@ public final class Utility {
         return (HttpsURLConnection) urlToGet.openConnection();
     }
 
-    // downloads File and returns File Name
+
     public static String getFile(URLConnection conn, String saveLocation,
-            String fileName, boolean https) throws MalformedURLException, IOException {
+                                 String fileName, boolean https) throws MalformedURLException, IOException {
         int responseCode;
         if (https) {
             responseCode = ((HttpsURLConnection) conn).getResponseCode();
@@ -290,6 +289,93 @@ public final class Utility {
 
         return fileName;
     }
+
+
+    // downloads File and returns File Name
+    public static String getFile1(URLConnection conn, String saveLocation,
+            String fileName, boolean https, Context ctx) throws MalformedURLException, IOException {
+        int responseCode;
+        if (https) {
+            responseCode = ((HttpsURLConnection) conn).getResponseCode();
+        } else {
+            responseCode = ((HttpURLConnection) conn).getResponseCode();
+        }
+        System.out.println(responseCode);
+        if (responseCode == 200) {
+            InputStream inputStream = conn.getInputStream();
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+            String saveFilePath = saveLocation + File.separator + fileName;
+//            FileOutputStream outputStream = new FileOutputStream(saveFilePath); //, Context.MODE_PRIVATE);
+//            File file = new File(ctx.getFilesDir(),"busses.txt");
+//            File file = new File(ctx.getFilesDir(),fileName);
+//            file.delete();
+            FileOutputStream outputStream = ctx.openFileOutput(fileName,Context.MODE_PRIVATE);
+            BufferedReader rd = new BufferedReader(new InputStreamReader(inputStream));
+
+            Scanner iss = new Scanner(bufferedInputStream);
+//            while (iss.hasNextByte()) {
+//                byte b = iss.nextByte();
+//                outputStream.write(b);
+//                System.out.print(((char) b));
+//            }
+            System.out.println("Begin writing file");
+            String line;
+            while ((line = rd.readLine()) != null) {
+                outputStream.write(line.getBytes());
+                System.out.println(line);
+            }
+            System.out.println("Writing file completed");
+
+//            int bytesRead = -1;
+//            byte[] buffer = new byte[1024];
+//            while ((bytesRead = inputStream.read(buffer)) != -1) {
+//                outputStream.write(buffer, 0, bytesRead);
+//            }
+            outputStream.close();
+            inputStream.close();
+        }
+        if (https) {
+            ((HttpsURLConnection) conn).disconnect();
+        } else {
+            ((HttpURLConnection) conn).disconnect();
+        }
+        return fileName;
+    }
+
+    public static String getFile2(URLConnection urlConnection, String saveLocation, String fileName, boolean https, Context ctx) throws MalformedURLException, IOException {
+        int responseCode;
+        if (https) {
+            responseCode = ((HttpsURLConnection) urlConnection).getResponseCode();
+        } else {
+            responseCode = ((HttpURLConnection) urlConnection).getResponseCode();
+        }
+        System.out.println(responseCode);
+        if (responseCode == 200) {
+            InputStream is = urlConnection.getInputStream();
+
+            File file = new File(ctx.getFilesDir(),fileName);
+            FileOutputStream fileInputStream = new FileOutputStream(file);
+            int bytesRead;
+            byte[]buffer = new byte[4096];
+
+            while((bytesRead=is.read(buffer)) != -1){
+                fileInputStream.write(buffer,0,bytesRead);
+                System.out.println(bytesRead);
+            }
+            fileInputStream.flush();
+            is.close();
+        }
+        if (https) {
+            ((HttpsURLConnection) urlConnection).disconnect();
+        } else {
+            ((HttpURLConnection) urlConnection).disconnect();
+        }
+
+        return fileName;
+    }
+
+
+
 
     // begins apiPoller task executed regularly to update vehicle-data
 //    public static void startupTasks() {
@@ -326,6 +412,7 @@ public final class Utility {
         //decode
         while (iss.hasNextLine()) {
             buffer = iss.nextLine();
+            System.out.println(buffer);
             if (buffer.equals("NEWBUS")) {
                 buffer = iss.nextLine();
                 buffer_s = buffer.split(",");
@@ -373,6 +460,7 @@ public final class Utility {
         busses = bussesLocal;
         return;
     }
+
 
 
 

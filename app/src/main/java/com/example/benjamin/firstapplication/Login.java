@@ -1,5 +1,6 @@
 package com.example.benjamin.firstapplication;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -14,10 +15,13 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+
 import android.os.Process;
 
 public class Login extends AppCompatActivity {
@@ -36,9 +40,9 @@ public class Login extends AppCompatActivity {
             String UsernameStr = Username.getText().toString();
             String PasswordStr = Password.getText().toString();
 
-            Response.Listener<String> responseListener = new Response.Listener<String>(){
+            Response.Listener<String> responseListener = new Response.Listener<String>() {
                 @Override
-                public void onResponse(String response){
+                public void onResponse(String response) {
                     try {
                         JSONObject jsonResponse = new JSONObject(response.substring(response.indexOf("{"), response.lastIndexOf("}") + 1));;
                        /* URL url = new URL("http://www.android.com/");
@@ -60,7 +64,7 @@ public class Login extends AppCompatActivity {
 
                                 @Override
                                 public void run() {
-                                    android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                                     try {
                                         //Test code
 //                    URL url = new URL("http://www.textfiles.com/100/914bbs.txt");
@@ -71,8 +75,37 @@ public class Login extends AppCompatActivity {
                                         URL url = new URL("http://129.3.212.153:8080/MTABusServlet/MTABusServlet?RequestType=login&UserID=" + username);
                                         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                                         urlConnection.setRequestMethod("POST");
+//                                        urlConnection.setRequestProperty("RequestType","login");
+//                                        urlConnection.setRequestProperty("UserID",username);
 
+//                                        String urlParams = "RequestType=login&UserID=" + username;
+//                                        byte[] postdata = urlParams.getBytes();
+//                                        int postDataLength = postdata.length;
+//
+//                                        Webb webb = Webb.create();
+//                                        webb = webb.post("http://129.3.212.153:8080/MTABusServlet/MTABusServlet")
+//                                                .param(" ")
+//                                                .param(" ")
+//                                                .ensureSuccess();
+
+
+
+//                                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+//                                        urlConnection.setDoOutput(true);
+//                                        urlConnection.setInstanceFollowRedirects(false);
+//                                        urlConnection.setRequestMethod("POST");
+//                                        urlConnection.setRequestProperty("Content-Length",Integer.toString(postDataLength));
+//                                        urlConnection.setUseCaches(false);
+//                                        DataOutputStream wr = new DataOutputStream(urlConnection.getOutputStream());
+//                                        wr.write(postdata);
+
+//                                        urlConnection.connect();
+
+                                        Context ctx = getApplicationContext();
                                         Utility.getFile(urlConnection, "", "", false);
+//                                        urlConnection.disconnect();
+                                        urlConnection.getResponseCode();
+
 
                                     } catch (MalformedURLException e) {
                                         e.printStackTrace();
@@ -89,9 +122,9 @@ public class Login extends AppCompatActivity {
                                 admin.putExtra("username", username);
                                 Login.this.startActivity(admin);
                             }else {*/
-                                //intent.putExtra("username", username);
-                                Login.this.startActivity(intent);
-                           // }
+                            //intent.putExtra("username", username);
+                            Login.this.startActivity(intent);
+                            // }
                         }else{
                             AlertDialog.Builder builder = new AlertDialog.Builder(Login.this);
                             builder.setMessage("Login Failed").setNegativeButton("Retry",null).create().show();

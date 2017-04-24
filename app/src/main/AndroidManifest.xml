@@ -37,7 +37,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Register" android:label="MTA"></activity>               <category android:name="android.intent.category.LAUNCHER" />
+        <activity android:name=".Register" android:label="MTA"></activity>
         <activity android:name=".MapsActivity" android:label="MTA"></activity>
     </application>
 

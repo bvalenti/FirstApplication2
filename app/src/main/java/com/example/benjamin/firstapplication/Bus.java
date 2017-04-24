@@ -1,10 +1,25 @@
 package com.example.benjamin.firstapplication;
 
 //import java.time.LocalDateTime;
+import android.os.Process;
+
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.Array;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Map;
+
+import javax.json.JsonObject;
+import javax.net.ssl.HttpsURLConnection;
 
 public class Bus {
 
@@ -14,157 +29,194 @@ public class Bus {
     public int direction;
     public Stop busRoute[];
     public Shape route_shape;
-
-    public Bus(){};
+    public Stop tmpStop;
+    public String duration;
+    private Object lock1;
+    MapsActivity currentMapActivity;
+    private boolean paused;
 
     public Bus(float lo, float la, String i, String DN, String ex, String t, int d) {
         longitude = lo;
         latitude = la;
         id = i;
         destinationName = DN;
-        // origin= O;
         expectedArrivalTime = ex;
         expectedDepartureTime = t;
         direction = d;
     }
 
-    public String getExpectedArrivalTime(Stop s) {
-		String estimatedArrivalTime = null;
-		double distancesBetweenStops[] = new double[busRoute.length];
-		int stopIndex = -1;
-		int nextStopIndex = -1;
-        LatLng points[];
+    public void runBusThread () {
+        Thread retrieveETA = new Thread(new Runnable() {
 
-		//Returns the MTA provided arrival time if s is the next stop.
-		if (s.stop_id.compareTo(destinationName) == 1) {
-			estimatedArrivalTime = expectedArrivalTime;
+            @Override
+            public void run() {
+//                android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                try {
+                        URL urlToGet = new URL("https://maps.googleapis.com/maps/api/directions/json?origin=" +
+                                latitude + "," + longitude + "&destination=" + tmpStop.stop_lat + "," + tmpStop.stop_lon
+                                + "&transit_mode=bus&key=AIzaSyCiVgMTjGyglB74UdndS40xCNzCaUIcoz4");
+                        HttpsURLConnection urlConnection = (HttpsURLConnection) urlToGet.openConnection();
+//                        urlConnection.getInputStream();
+                    int response = urlConnection.getResponseCode();
+                    System.out.println(response);
+                    urlConnection.getInputStream();
+                    urlConnection.setRequestMethod("GET");
+//                    urlConnection.setConnectTimeout(5000);
+                    urlConnection.connect();
+                    BufferedReader br = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
 
-		//Case where s is not the next stop.
-		} else if (s.stop_id.compareTo(destinationName) != 1) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        if (line.contains("duration")) {
+                            line = br.readLine();
+                            break;
+                        }
+                    }
 
-			//Find the index of stop, s, in the busRoute array.
-			for (int j = 0; j < busRoute.length; j++) {
-				if (s.stop_id.compareTo(busRoute[j].stop_id) == 0) {
-					stopIndex = j;
-					break;
-				}
-			}
+                    br.close();
+                    System.out.println(line);
+                    String myString = line.split(":")[1].split(",")[0];
+                    duration = myString.substring(2, myString.length()-1);
 
-			//Make sure the stop, s, is contained in the busRoute.
-			if (stopIndex >= 0) {
+                    System.out.println(duration);
+                    urlConnection.disconnect();
+                    setDuration(duration);
 
-//                busRoute
-//                route_shape[];
-//                longitude, latitude,
-//                longitudeOfLastPolling, latitudeOfLastPolling
-                ArrayList<MyPoint> combinedPositions = combineRouteWithShape(busRoute, route_shape);
-//                combinedPositions
+                    } catch(MalformedURLException e){
+                        e.printStackTrace();
+                    } catch(IOException e){
+                        e.printStackTrace();
+                    }
+//                currentMapActivity.Resume();
+//                onResume();
+            }
+        });
+        retrieveETA.start();
+    }
 
-				//Converting latitude-longitude pairs to easting-northing pairs and find distances between stops
-				//contained in busRoute.
-				for (int i = 0; i < busRoute.length-1; i++) {
-					LatLng latLngBusRoute2 = new LatLng(busRoute[i + 1].stop_lat, busRoute[i + 1].stop_lon);
-					LatLng latLngBusRoute1 = new LatLng(busRoute[i].stop_lat, busRoute[i].stop_lon);
-                    double tmp = Math.sqrt(Math.pow(latLngBusRoute2.latitude - latLngBusRoute1.latitude,2) +
-                            Math.pow(latLngBusRoute2.longitude - latLngBusRoute1.longitude,2));
+    public void getExpectedArrivalTime(Stop s) throws MalformedURLException, InterruptedException {
+        String estimatedArrivalTime = null;
+        int stopIndex = -1;
+        int nextStopIndex = -1;
+        int destinationIndex = -1;
+        double totalDistance = 0;
+        double totalDistanceToStop = 0;
+        LatLng originLL = new LatLng(latitude, longitude);
+        LatLng destinationLL = new LatLng(s.stop_lat, s.stop_lon);
+        tmpStop = s;
+        lock1 = new Object();
+        paused = true;
+
+            //Find the index of stop, s, in the busRoute array.
+            for (int j = 0; j < busRoute.length; j++) {
+                if (s.stop_name.equals(busRoute[j].stop_name)) {
+                    stopIndex = j;
+                }
+            }
+
+            //Make sure the stop, s, is contained in the busRoute.
+            if (stopIndex >= 0) {
+
+                ArrayList<MyPoint> combinedStops = combineRouteWithShape(busRoute, route_shape);
+                double distancesBetweenStops[] = new double[combinedStops.size()];
+                for (int i = 0; i < combinedStops.size() - 1; i++) {
+                    LatLng latLngBusRoute2 = new LatLng(combinedStops.get(i + 1).shape_pt_lat, combinedStops.get(i + 1).shape_pt_lon);
+                    LatLng latLngBusRoute1 = new LatLng(combinedStops.get(i).shape_pt_lat, combinedStops.get(i).shape_pt_lon);
+                    double tmp = Math.sqrt(Math.pow(latLngBusRoute2.latitude - latLngBusRoute1.latitude, 2) +
+                            Math.pow(latLngBusRoute2.longitude - latLngBusRoute1.longitude, 2));
                     distancesBetweenStops[i] = tmp;
-//					distancesBetweenStops[i] = latLngBusRoute2.distance(latLngBusRoute1);
-				}
+                }
 
-				//Find the index of the next bus stop in the array busRoute.
-				for (int j = 0; j <= busRoute.length; j++) {
-					if (destinationName.compareTo(busRoute[j].stop_id) == 0) {
-						nextStopIndex = j;
-						break;
-					}
-				}
+                double tmpDistances[] = new double[combinedStops.size()];
+                for (int i = 0; i <= combinedStops.size() - 1; i++) {
+                    tmpDistances[i] = Math.sqrt(Math.pow(latitude - combinedStops.get(i).shape_pt_lat, 2)
+                            + Math.pow(longitude - combinedStops.get(i).shape_pt_lon, 2));
+                }
+                int busIndex = minIndex(tmpDistances);
 
-				//Find distance between the bus and the next stop.
-				LatLng latLngNextStop = new LatLng(busRoute[nextStopIndex].stop_lat, busRoute[nextStopIndex].stop_lon);
-				LatLng latLngBus = new LatLng(latitude, longitude);
-				LatLng latLngBusLastPolling = new LatLng(latitudeOfLastPolling, longitudeOfLastPolling);
+                double distanceToNextPoint = 0;
+                int indexOfNextPoint = -1;
+                if (busIndex == 0) {
+                    indexOfNextPoint = 1;
+                } else if (busIndex == combinedStops.size() - 1) {
+                    indexOfNextPoint = combinedStops.size() - 1;
+                    estimatedArrivalTime = expectedArrivalTime;
+                } else if (tmpDistances[busIndex - 1] > tmpDistances[busIndex + 1]) {
+                    indexOfNextPoint = busIndex + 1;
+                } else if (tmpDistances[busIndex - 1] < tmpDistances[busIndex + 1]) {
+                    indexOfNextPoint = busIndex;
+                }
+                for (int i = 0; i <= combinedStops.size() - 1; i++) {
+                    if (s.stop_name.equals(combinedStops.get(i).shape_id)) {
+                        stopIndex = i;
+                    }
+                }
 
-                double distanceFromBusToFirstStop = Math.sqrt(Math.pow(latLngBus.latitude - latLngNextStop.latitude,2) +
-                        Math.pow(latLngBus.longitude - latLngNextStop.longitude,2));
+                if (indexOfNextPoint <= stopIndex) {
+//                    currentMapActivity.runBusThread(latitude,longitude,tmpStop,this);
+                    runBusThread();
+                } else if (indexOfNextPoint > stopIndex) {
+                    duration = null;
+                    setDuration(duration);
+                }
 
-//				double distanceFromBusToFirstStop = latLngBus.distance(latLngNextStop);
+//                Thread.currentThread().sleep(5000);
 
-				//The bus speed in meters/minute.
-                double averageBusVelocity = Math.sqrt(Math.pow(latLngBus.latitude - latLngBusLastPolling.latitude,2) +
-                        Math.pow(latLngBus.longitude - latLngBusLastPolling.longitude,2));
+//                currentMapActivity.Resume();
+//                synchronized(lock1) {
+//                    while (paused) {
+//                        try {
+//                            lock1.wait();
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+        }
+//    }
+//		return estimatedArrivalTime;
+    }
 
-//                double averageBusVelocity = latLngBus.distance(latLngBusLastPolling);
-
-				//Sum distances along the bus route from the bus to stop, s.
-				double totalDistanceToStop = distanceFromBusToFirstStop;
-				for (int i = nextStopIndex; i <= stopIndex; i++) {
-					totalDistanceToStop = totalDistanceToStop + distancesBetweenStops[i];
-				}
-
-				totalDistanceToStop = Math.round(totalDistanceToStop * 10.0)/10.0;
-				averageBusVelocity = Math.round(averageBusVelocity * 10.0)/10.0;
-
-				double timeToAdd = (double) Math.round(100 * totalDistanceToStop/averageBusVelocity)/100;
-				String timeToAddString = Double.toString(timeToAdd);
-				int timeToAddMinutes = Integer.parseInt(timeToAddString.split("\\.")[0]);
-				int timeToAddSeconds = Integer.parseInt(timeToAddString.split("\\.")[1]);
-				timeToAddSeconds = timeToAddSeconds * 60/100;
-
-                Calendar c = Calendar.getInstance();
-                int seconds = c.get(Calendar.SECOND) + timeToAddSeconds;
-                int minutes = c.get(Calendar.MINUTE) + timeToAddMinutes;
-                int hours = c.get(Calendar.HOUR);
-//				estimatedArrivalTime = LocalTime.now().plusMinutes(timeToAddMinutes).plusSeconds(timeToAddSeconds);
-                estimatedArrivalTime = Integer.toString(hours) + ":" + Integer.toString(minutes) + ":" + Integer.toString(seconds);
-			}
-		}
-		return estimatedArrivalTime;
-	}
+    public void setDuration(String dura) {
+        duration = dura;
+    }
 
     public ArrayList<MyPoint> combineRouteWithShape (Stop[] stops, Shape routeShape) {
-        ArrayList<MyPoint> out = null;
-//        ArrayList<LatLng> out = null;
-        double[] tmpdist = null;
-
-        for (int i = 0; i <= routeShape.points.size(); i++) {
+        ArrayList<MyPoint> out = new ArrayList<MyPoint>();
+        for (int i = 0; i <= routeShape.points.size()-1; i++) {
             out.add(routeShape.points.get(i));
-//            out.add(new MyPoint(routeShape.points.get(i).shape_pt_lat,routeShape.points.get(i).shape_pt_lon));
         }
-
         for (Stop s : stops) {
-            for (int i = 0; i < routeShape.points.size(); i++) {
-                MyPoint tmppoint = routeShape.points.get(i);
-                tmpdist[i] = Math.sqrt(Math.pow(s.stop_lat - tmppoint.shape_pt_lat,2) + Math.pow(s.stop_lon - tmppoint.shape_pt_lon,2));
-            }
-            int index = minIndex(tmpdist);
-
-            if (index == routeShape.points.size()) {
-                if (tmpdist[index-1] >= tmpdist[0]) {
-                    out.add(0,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
-                }  else {
-                    out.add(new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
-                }
-            } else if (index == 0) {
-                if (tmpdist[index+1] >= tmpdist[routeShape.points.size()]) {
-                    out.add(0,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
-                } else {
-                    out.add(new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
-                }
-                out.add(index-1,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
-            } else if (tmpdist[index-1] > tmpdist[index+1]) {
-                out.add(index,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
-            } else if (tmpdist[index+1] > tmpdist[index-1]) {
-                out.add(index-1,new MyPoint(s.stop_id,s.stop_lat,s.stop_lon,0));
-            }
+            out = recurseList(out,s);
         }
         return out;
+    }
+
+    public ArrayList<MyPoint> recurseList (ArrayList<MyPoint> in, Stop s) {
+        double[] tmpdist = new double[in.size()];
+        for (int i = 0; i < in.size(); i++) {
+            MyPoint tmppoint = in.get(i);
+            tmpdist[i] = Math.sqrt(Math.pow(s.stop_lat - tmppoint.shape_pt_lat, 2) + Math.pow(s.stop_lon - tmppoint.shape_pt_lon, 2));
+        }
+        int index = minIndex(tmpdist);
+        if (index == 0) {
+            in.add(1, new MyPoint(s.stop_name, s.stop_lat, s.stop_lon, 0));
+        } else if (index == in.size()-1) {
+            in.add(in.size()-2, new MyPoint(s.stop_name, s.stop_lat, s.stop_lon, 0));
+        } else if (tmpdist[index - 1] > tmpdist[index + 1]) {
+            in.add(index,new MyPoint(s.stop_name, s.stop_lat, s.stop_lon, 0));
+        } else if (tmpdist[index - 1] < tmpdist[index + 1]) {
+            in.add(index-1,new MyPoint(s.stop_name, s.stop_lat, s.stop_lon, 0));
+        }
+        return in;
     }
 
     public int minIndex (double[] a) {
         double tmp1 = 0;
         double tmp2 = 1000000000;
         int out = 0;
-        for (int i = 0; i <= a.length; i++) {
+        for (int i = 0; i <= a.length-1; i++) {
             tmp1 = a[i];
             if (tmp1 < tmp2) {
                 tmp2 = tmp1;
@@ -172,5 +224,16 @@ public class Bus {
             }
         }
         return out;
+    }
+
+    final public void onResume() {
+        synchronized (lock1) {
+            paused = false;
+            lock1.notifyAll();
+        }
+    }
+
+    public void setCurrentMaps(MapsActivity map) {
+        currentMapActivity = map;
     }
 }

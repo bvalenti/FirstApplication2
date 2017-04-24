@@ -49,17 +49,17 @@ public class MyTimerTask extends TimerTask {
 //            e.printStackTrace();
 //        }
 
-            HashMap<String, Bus> busses = currentMapActivity.getBusHashMapTmp();
+//            HashMap<String, Bus> busses = currentMapActivity.getBusHashMapTmp();
 
-            currentMapActivity.clearBusLocations();
-            for (Bus b : busses.values()) {
-                if (b.id.equals(routeName)) {
-//                currentMapActivity.plotBusLocation(b, googlemap, stopID);
-                    tmp = b;
-                    currentMapActivity.plotBusLocation(b);
-                }
-            }
-            currentMapActivity.plotRoutePath(tmp);
+//            currentMapActivity.clearBusLocations();
+//            for (Bus b : busses.values()) {
+//                if (b.id.equals(routeName)) {
+////                currentMapActivity.plotBusLocation(b, googlemap, stopID);
+//                    tmp = b;
+//                    currentMapActivity.plotBusLocation(b);
+//                }
+//            }
+//            currentMapActivity.plotRoutePath(tmp);
         }
     }
 

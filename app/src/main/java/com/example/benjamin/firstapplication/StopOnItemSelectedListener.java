@@ -6,6 +6,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 
 import com.google.android.gms.maps.GoogleMap;
 
+import java.net.MalformedURLException;
 import java.util.HashMap;
 
 /**
@@ -24,30 +25,51 @@ public class StopOnItemSelectedListener implements OnItemSelectedListener {
 
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
         String stopID = parent.getItemAtPosition(pos).toString();
-        Bus tmp1 = null;
-        Bus tmp0 = null;
+        Bus tmp = null;
+//        Bus tmp1 = null;
+//        Bus tmp0 = null;
         HashMap<String, Bus> busses = Utility.getBusses();
-
+        String rName = routeName.split(":")[0];
+        currentMapActivity.setStopName(stopID);
 //        timerTask.setRouteName(routeName);
         currentMapActivity.clearBusLocations();
-        for (Bus b : busses.values()) {
-            if (b.id.equals(routeName)) {
-//                currentMapActivity.plotBusLocation(b, googlemap, stopID);
-                if (b.direction == 1) {
-                    tmp1 = b;
-                } else if (b.direction == 0) {
-                    tmp0 = b;
+
+        if (routeName.split(":")[1].equals(" North")) {
+            for (Bus b : busses.values()) {
+                if (b.id.equals(rName) && b.direction == 1) {
+                    tmp = b;
+//                    currentMapActivity.plotBusLocation(b);
+                    try {
+                        currentMapActivity.plotBusLocation(b,stopID);
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-                currentMapActivity.plotBusLocation(b);
+            }
+
+        } else if (routeName.split(":")[1].equals(" South")) {
+            for (Bus b : busses.values()) {
+                if (b.id.equals(rName) && b.direction == 0) {
+                    tmp = b;
+//                    currentMapActivity.plotBusLocation(b);
+                    try {
+                        currentMapActivity.plotBusLocation(b,stopID);
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
-        if (tmp0 != null && tmp1 != null) {
-            currentMapActivity.plotRoutePath(tmp0, tmp1);
-        } else if (tmp0 == null) {
-            currentMapActivity.plotRoutePath(tmp1);
-        } else if (tmp1 == null) {
-            currentMapActivity.plotRoutePath(tmp0);
+
+        if (tmp != null) {
+            currentMapActivity.plotRoutePath(tmp);
         }
+        currentMapActivity.setStopName(stopID);
+//        this.onItemSelected(parent,view,pos,id);
     }
 
     public void onNothingSelected(AdapterView<?> arg0) { }
