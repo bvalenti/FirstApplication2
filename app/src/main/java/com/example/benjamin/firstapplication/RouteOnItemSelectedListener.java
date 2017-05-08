@@ -29,7 +29,7 @@ public class RouteOnItemSelectedListener implements OnItemSelectedListener {
     StopOnItemSelectedListener currentStopListener;
     public Resources resources;
     Context ctx;
-    private Object lock;
+    public Object lock;
     private boolean paused;
 
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -54,40 +54,43 @@ public class RouteOnItemSelectedListener implements OnItemSelectedListener {
         }
 //        }
 
-        HashMap<String, Bus> busses = currentMapActivity.getInternalBusData();
+            HashMap<String, Bus> busses = currentMapActivity.getInternalBusData();
 
-        List<String> toSpin = new ArrayList<String>();
-        Bus tmp = null;
+            List<String> toSpin = new ArrayList<String>();
+            Bus tmp = null;
 
-        if (routeID.split(":")[1].equals(" North")) {
-            for (Bus b : busses.values()) {
-//                System.out.println(b.id);
-                if (b.id.equals(rID) && b.direction == 1) {
-                    tmp = b;
-                    break;
+            if (routeID.split(":")[1].equals(" North")) {
+                for (Bus b : busses.values()) {
+                System.out.println(b.id);
+                    if (b.id.equals(rID) && b.direction == 1) {
+                        tmp = b;
+                        break;
+                    }
+                }
+            } else if (routeID.split(":")[1].equals(" South")) {
+                for (Bus b : busses.values()) {
+                System.out.println(b.id);
+                    if (b.id.equals(rID) && b.direction == 0) {
+                        tmp = b;
+                        break;
+                    }
                 }
             }
-        } else if (routeID.split(":")[1].equals(" South")) {
-            for (Bus b : busses.values()) {
-//                System.out.println(b.id);
-                if (b.id.equals(rID) && b.direction == 0) {
-                    tmp = b;
-                    break;
-                }
-            }
-        }
             if (tmp != null) {
                 for (Stop p : tmp.busRoute) {
                     toSpin.add(p.stop_name);
                 }
             }
-        currentStopListener.setRouteName(routeID);
-        currentMapActivity.setRouteName(rID);
-        currentMapActivity.setDirection(tmp.direction);
-        currentStopListener.setCurrentRoute(tmp.busRoute);
-        ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(currentMapActivity,android.R.layout.simple_spinner_item,toSpin);
-        spinner2ref.setAdapter(adapter2);
-    }
+
+            System.out.println(tmp);
+            currentStopListener.setRouteName(routeID);
+            currentMapActivity.setRouteName(rID);
+            currentMapActivity.setDirection(tmp.direction);
+            currentStopListener.setCurrentRoute(tmp.busRoute);
+            ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(currentMapActivity, android.R.layout.simple_spinner_item, toSpin);
+            spinner2ref.setAdapter(adapter2);
+        }
+//    }
 
     public void onNothingSelected(AdapterView<?> arg0) {}
 

@@ -145,43 +145,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void handleMessage(Message inputMessage) {
 
-                startRetrieveFileThreadTimer(routeName,ctx);
-                synchronized(lock1) {
-                    while (paused) {
-                        try {
-                            lock1.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                startRetrieveFileThreadTimer(routeName, ctx);
+                synchronized (lock1) {
+//                    while (paused) {
+//                        try {
+//                            lock1.wait();
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+
+
+                    File file = new File(getFilesDir(), "busencoding");
+                    FileInputStream bussesStream = null;
+                    try {
+                        bussesStream = new FileInputStream(file);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
                     }
-                }
+                    Utility.decodeToHashMap(bussesStream);
+                    busses = Utility.getBusses();
 
-                File file = new File(getFilesDir(), "busencoding");
-                FileInputStream bussesStream = null;
-                try {
-                    bussesStream = new FileInputStream(file);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                Utility.decodeToHashMap(bussesStream);
-                busses = Utility.getBusses();
-
-                Bus tmp = null;
-                clearBusLocations();
-                for (Bus b : busses.values()) {
-                    if (b.id.equals(routeName) && b.direction == currentDirection) {
-                        tmp = b;
+                    Bus tmp = null;
+                    clearBusLocations();
+                    for (Bus b : busses.values()) {
+                        if (b.id.equals(routeName) && b.direction == currentDirection) {
+                            tmp = b;
 //                        plotBusLocation(b);
-                        try {
-                            plotBusLocation(b,stopName);
-                        } catch (MalformedURLException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            try {
+                                plotBusLocation(b, stopName);
+                            } catch (MalformedURLException e) {
+                                e.printStackTrace();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
+                    plotRoutePath(tmp);
                 }
-                plotRoutePath(tmp);
             }
         };
         this.startTimer();
@@ -192,113 +193,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        LatLng MTA = new LatLng(40.75,-73.9);
+        LatLng MTA = new LatLng(40.75, -73.9);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(MTA));
 
         mMap.getUiSettings().setRotateGesturesEnabled(false);
-
-//        routeSpinner = (Spinner) findViewById(R.id.routeSpinner);
-//        stopSpinner = (Spinner) findViewById(R.id.stopSpinner);
-//
-//        //set spinner listeners
-//        routeListener = new RouteOnItemSelectedListener();
-//        routeListener.setMapsClass(this);
-//        stopListener = new StopOnItemSelectedListener();
-//        stopListener.setMapsClass(this);
-//        stopListener.setGoogleMap(mMap);
-//        routeListener.setStopListener(stopListener);
-//        routeListener.setSpinner2(stopSpinner);
-//
-//        routeSpinner.setOnItemSelectedListener(routeListener);
-//        stopSpinner.setOnItemSelectedListener(stopListener);
-//
-//        final Context ctx = getApplicationContext();
-//        routeListener.setContext(ctx);
-//
-//        List<String> toSpin1 = new ArrayList<String>();
-//        List<String> toSpin2 = new ArrayList<String>();
-//
-//        busses = getBusHashMapRes();
-//        for (Bus b : busses.values()) {
-//            if(!toSpin1.contains(b.id + ": North")) {
-//                toSpin1.add(b.id + ": North");
-//                toSpin1.add(b.id + ": South");
-//            }
-//        }
-//
-//        ArrayAdapter<String> adapter1 = new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,toSpin1);
-//        routeSpinner.setAdapter(adapter1);
-//
-//        Bus tmp = busses.get(0);
-//        if (tmp != null) {
-//            for (Stop p : tmp.busRoute) {
-//                toSpin2.add(p.stop_name);
-//            }
-//        }
-//        ArrayAdapter<String> adapter2 = new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,toSpin2);
-//        stopSpinner.setAdapter(adapter2);
-//
-//
-//
-//        routeListener.setMapsRotate();
-//
-////////////////////////////////////////////////////////////////////////////
-//
-//        //Handler
-//        handler = new Handler() {
-//
-//            @Override
-//            public void handleMessage(Message inputMessage) {
-//
-//                startRetrieveFileThreadTimer(routeName,ctx);
-//                synchronized(lock1) {
-//                    while (paused) {
-//                        try {
-//                            lock1.wait();
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//
-//                File file = new File(getFilesDir(), "busencoding");
-//                FileInputStream bussesStream = null;
-//                try {
-//                    bussesStream = new FileInputStream(file);
-//                } catch (FileNotFoundException e) {
-//                    e.printStackTrace();
-//                }
-//                Utility.decodeToHashMap(bussesStream);
-//                busses = Utility.getBusses();
-//
-//                Bus tmp = null;
-//                clearBusLocations();
-//                for (Bus b : busses.values()) {
-//                    if (b.id.equals(routeName) && b.direction == currentDirection) {
-//                        tmp = b;
-////                        plotBusLocation(b);
-//                        try {
-//                            plotBusLocation(b,stopName);
-//                        } catch (MalformedURLException e) {
-//                            e.printStackTrace();
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//                plotRoutePath(tmp);
-//            }
-//        };
-//        this.startTimer();
     }
-
-//    public void setMapsOptions() {
-//        LatLng MTA = new LatLng(40.75,-73.9);
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(MTA));
-//        mMap.getUiSettings().setRotateGesturesEnabled(false);
-//        mMap.setMaxZoomPreference(5);
-//    }
-
 
     //Starts timer for updating the data base every minute
     public void startTimer() {
@@ -310,34 +209,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 handler.obtainMessage(0).sendToTarget();
 
             }
-        },60000,60000);
+        },70000,70000);
     }
 
     //Method that starts the thread to pull a file from the server
     public void startRetrieveFileThread(String rID, Context ctx1) {
-        final Context finalCtx = ctx1;
-        final String RouteID = rID;
-        final Thread retrieveFile = new Thread(new Runnable () {
-            @Override
-            public void run() {
-                Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
-                    try {
-                        //Code for retrieving files from server
-//                        URL url = new URL("http://129.3.212.153:8080/MTABusServlet/MTABusServlet?RequestType=getBusses");
-                        URL url = new URL("http://74.79.83.251:8080/MTABusServlet/MTABusServlet?RequestType=getBusses&RouteID=" + RouteID);
+
+            final Context finalCtx = ctx1;
+            final String RouteID = rID;
+            final Thread retrieveFile = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (routeListener.lock) {
+                        android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
+                        try {
+                            //Code for retrieving files from server
+                            URL url = new URL("http://129.3.210.6:8080/MTABusServlet/MTABusServlet?RequestType=getBusses&RouteID=" + RouteID);
+//                        URL url = new URL("http://74.79.83.251:8080/MTABusServlet/MTABusServlet?RequestType=getBusses&RouteID=" + RouteID);
 //                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                        URLConnection urlConnection = url.openConnection();
-                        String fileName = Utility.getFile2(urlConnection, "/Internal Storage/Android/data", "busencoding", false, finalCtx);
-                        routeListener.onResume();
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                            URLConnection urlConnection = url.openConnection();
+                            String fileName = Utility.getFile2(urlConnection, "/Internal Storage/Android/data", "busencoding", false, finalCtx);
+                            routeListener.onResume();
+                        } catch (MalformedURLException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-                    routeListener.onResume();
-            }
-        });
-        retrieveFile.start();
+                        routeListener.onResume();
+
+                }
+            });
+            retrieveFile.start();
     }
 
     public void startRetrieveFileThreadTimer(String rID, Context ctx1) {
@@ -346,21 +249,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         final Thread retrieveFileTimer = new Thread(new Runnable () {
             @Override
             public void run() {
-                Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
-                try {
-                    //Code for retrieving files from server
+                synchronized (lock1) {
+                    android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_FOREGROUND);
+                    try {
+                        //Code for retrieving files from server
 //                        URL url = new URL("http://129.3.212.153:8080/MTABusServlet/MTABusServlet?RequestType=getBusses");
-                    URL url = new URL("http://74.79.83.251:8080/MTABusServlet/MTABusServlet?RequestType=getBusses&RouteID=" + RouteID);
+                        URL url = new URL("http://129.3.210.6:8080/MTABusServlet/MTABusServlet?RequestType=getBusses&RouteID=" + RouteID);
 //                        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                    URLConnection urlConnection = url.openConnection();
-                    String fileName = Utility.getFile2(urlConnection, "/Internal Storage/Android/data", "busencoding", false, finalCtx);
+                        URLConnection urlConnection = url.openConnection();
+                        String fileName = Utility.getFile2(urlConnection, "/Internal Storage/Android/data", "busencoding", false, finalCtx);
 
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+//                    Resume();
                 }
-                Resume();
             }
         });
         retrieveFileTimer.start();
@@ -392,7 +297,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         }
 
                         br.close();
-                        System.out.println(line);
+                       // System.out.println(line);
                         dura = line; //.split(":")[1];
                         urlConnection.disconnect();
                         bus.setDuration(dura);
@@ -417,7 +322,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         for (Stop s : bus.busRoute) {
-            System.out.println(bus.destinationName);
+           // System.out.println(bus.destinationName);
             if (stopID.equals(s.stop_name)) {
                 stop = s;
                 break;
@@ -432,12 +337,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //            while (paused) {
 //                try {
 //                    lock1.wait();
+////                    Thread.currentThread().sleep(50);
 //                } catch (InterruptedException e) {
 //                    e.printStackTrace();
 //                }
 //            }
 //        }
-        Thread.currentThread().sleep(330);
+        Thread.currentThread().sleep(500);
         plotBus2(MTA,stop,bus);
     }
 
@@ -446,7 +352,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng StopLL = new LatLng(stop.stop_lat, stop.stop_lon);
         String eta = bus.duration;
         if (eta != null) {
-            mMap.addMarker(new MarkerOptions().position(MTA).title(eta));
+            mMap.addMarker(new MarkerOptions().position(MTA).title(bus.busID + ": " + eta));
         } else if (eta == null) {
             mMap.addMarker(new MarkerOptions().position(MTA).title("This bus is currently not en-route to the specified stop."));
         }
@@ -490,11 +396,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Polyline path = mMap.addPolyline(new PolylineOptions().width(5).color(Color.RED));
         List<LatLng> busList = new ArrayList<>();
         for (int i = 0; i < busPoints1.size(); i++) {
-            System.out.println();
+          //  System.out.println();
             busList.add(new LatLng(busPoints1.get(i).shape_pt_lat,busPoints1.get(i).shape_pt_lon));
         }
         for (int i = 0; i < busPoints2.size(); i++) {
-            System.out.println();
+          //  System.out.println();
             busList.add(new LatLng(busPoints2.get(i).shape_pt_lat,busPoints2.get(i).shape_pt_lon));
         }
         path.setPoints(busList);
@@ -506,7 +412,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Polyline path = mMap.addPolyline(new PolylineOptions().width(5).color(Color.RED));
         List<LatLng> busList = new ArrayList<>();
         for (int i = 0; i < busPoints.size(); i++) {
-            System.out.println();
+          //  System.out.println();
             busList.add(new LatLng(busPoints.get(i).shape_pt_lat,busPoints.get(i).shape_pt_lon));
         }
         path.setPoints(busList);

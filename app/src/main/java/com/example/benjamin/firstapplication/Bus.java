@@ -34,6 +34,7 @@ public class Bus {
     private Object lock1;
     MapsActivity currentMapActivity;
     private boolean paused;
+    ArrayList<MyPoint> combinedStops;
 
     public Bus(float lo, float la, String i, String DN, String ex, String t, int d) {
         longitude = lo;
@@ -50,18 +51,20 @@ public class Bus {
 
             @Override
             public void run() {
+                String waypoints = "";
 //                android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
                 try {
+//                    for (MyPoint p : combinedStops) {
+//                        waypoints = waypoints + "|" + Double.toString(p.shape_pt_lat) + "," + Double.toString(p.shape_pt_lon);
+//                    }
                         URL urlToGet = new URL("https://maps.googleapis.com/maps/api/directions/json?origin=" +
                                 latitude + "," + longitude + "&destination=" + tmpStop.stop_lat + "," + tmpStop.stop_lon
                                 + "&transit_mode=bus&key=AIzaSyCiVgMTjGyglB74UdndS40xCNzCaUIcoz4");
                         HttpsURLConnection urlConnection = (HttpsURLConnection) urlToGet.openConnection();
-//                        urlConnection.getInputStream();
                     int response = urlConnection.getResponseCode();
                     System.out.println(response);
                     urlConnection.getInputStream();
                     urlConnection.setRequestMethod("GET");
-//                    urlConnection.setConnectTimeout(5000);
                     urlConnection.connect();
                     BufferedReader br = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
 
@@ -118,7 +121,7 @@ public class Bus {
             //Make sure the stop, s, is contained in the busRoute.
             if (stopIndex >= 0) {
 
-                ArrayList<MyPoint> combinedStops = combineRouteWithShape(busRoute, route_shape);
+                combinedStops = combineRouteWithShape(busRoute, route_shape);
                 double distancesBetweenStops[] = new double[combinedStops.size()];
                 for (int i = 0; i < combinedStops.size() - 1; i++) {
                     LatLng latLngBusRoute2 = new LatLng(combinedStops.get(i + 1).shape_pt_lat, combinedStops.get(i + 1).shape_pt_lon);
@@ -140,8 +143,7 @@ public class Bus {
                 if (busIndex == 0) {
                     indexOfNextPoint = 1;
                 } else if (busIndex == combinedStops.size() - 1) {
-                    indexOfNextPoint = combinedStops.size() - 1;
-                    estimatedArrivalTime = expectedArrivalTime;
+                    indexOfNextPoint = combinedStops.size() - 2;
                 } else if (tmpDistances[busIndex - 1] > tmpDistances[busIndex + 1]) {
                     indexOfNextPoint = busIndex + 1;
                 } else if (tmpDistances[busIndex - 1] < tmpDistances[busIndex + 1]) {
@@ -160,19 +162,6 @@ public class Bus {
                     duration = null;
                     setDuration(duration);
                 }
-
-//                Thread.currentThread().sleep(5000);
-
-//                currentMapActivity.Resume();
-//                synchronized(lock1) {
-//                    while (paused) {
-//                        try {
-//                            lock1.wait();
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
         }
 //    }
 //		return estimatedArrivalTime;
